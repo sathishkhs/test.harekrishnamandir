@@ -15,9 +15,10 @@ class Charitable_Programs extends MY_Controller
         parent::__construct();
         $this->class_name = strtolower(get_class());
         $this->load->config('razorpay-config');
-
+        $this->load->library('form_validation');
 
         $this->load->model('seva_page_model');
+        $this->load->model('festivals_model');
         $this->load->model('payment_model');
     }
 
@@ -25,69 +26,94 @@ class Charitable_Programs extends MY_Controller
     public function index($slug) {
        
         if (!empty($this->input->post())) {
+            $this->form_validation->set_rules('full_name', 'Full Name', 'required');
+            $this->form_validation->set_rules('email', 'Email', 'required|valid_email|trim');
+            $this->form_validation->set_rules('phone_number', 'Phone number', 'required|min_length[10]|max_length[10]|numeric');
+            $this->form_validation->set_rules('pan_number', 'Pan Number', 'required|trim|alpha_numeric');
+            $this->form_validation->set_rules('amount', 'Amount', 'required|trim|greater_than[499]');
 
-            $template_path = $this->programpagewisecontent($slug);
-            $data = $this->data;
-            $data['slug'] = $slug;
-            $data['table_name'] = $table_name = $this->input->post('table_name');
+            if($_POST['address'] && $_POST['pincode'] && $_POST['city']){
+                $this->form_validation->set_rules('city', 'City', 'required|trim|alpha');
+                $this->form_validation->set_rules('address', 'Address', 'required');
+                $this->form_validation->set_rules('pincode', 'Pincode', 'required|trim|numeric');
+            }
+            
+            if ($this->form_validation->run() == TRUE){
+                $template_path = $this->programpagewisecontent($slug);
+                $data = $this->data;
+                $data['slug'] = $slug;
+                $data['table_name'] = $table_name = $this->config->item('table_name');
+                $this->festivals_model->data['full_name'] = $data['full_name'] = $full_name = $this->input->post('full_name');
+                $this->festivals_model->data['country_code'] = $data['country_code'] = $country_code = $this->input->post('country_code');
+                $this->festivals_model->data['phone_number'] = $data['phone_number'] = $phone_number = $this->input->post('phone_number');
+                $this->festivals_model->data['email'] = $data['email'] = $email = $this->input->post('email');
+                $this->festivals_model->data['pan_number'] = $data['pan_number'] = $pan_number = $this->input->post('pan_number');
+                $this->festivals_model->data['address'] = $data['address'] = $address = $this->input->post('address');
+                $this->festivals_model->data['pincode'] = $data['pincode'] = $pincode = $this->input->post('pincode');
+                $this->festivals_model->data['amount'] = $data['amount'] = $amount = $this->input->post('amount');
+                $this->festivals_model->data['currency'] = $data['currency'] = $currency = $this->input->post('currency');
+                $this->festivals_model->data['payment_date'] = $data['payment_date'] = $payment_date = date('Y-m-d h:i:s');
+                $this->festivals_model->data['seva_date'] = $data['seva_date'] = $seva_date = $this->input->post('seva_date');
+                $this->festivals_model->data['seva_name'] = $data['seva_name'] = $seva_name = $this->input->post('seva_name');
+                $this->festivals_model->data['festival'] = $data['festival'] = $festival = $this->input->post('festival');
+                $this->festivals_model->data['status'] = 'Attempt';
+                $data['keyId'] = $keyId = $this->config->item('keyId');
+                $str_result = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                $generated_key = substr(str_shuffle($str_result), 0, 4);
+                $this->festivals_model->data['receipt'] = $receipt = $generated_key . '_' . rand('00000000', '9999999999');
+                $data['insert_id'] = $insert_id = $this->festivals_model->insert($table_name);
+                $data['order_data'] = $order_data = [
+                    'receipt'         => $receipt,
+                    'amount'          => $amount * 100, // 39900 rupees in paise
+                    'currency'        => $currency,
+                    'payment'=> [
+                        "capture"=> "automatic",
+                        'capture_options' => array('automatic_expiry_period' => 12,'manual_expiry_period' => 7200,'refund_speed' => 'normal')
+                    ],
+                    'notes'           => [
+                        'name'  => $full_name,
+                        'phone_number' => $phone_number,
+                        'email' => $email,
+                        'pan_number' => $pan_number,
+                        'address' => $address,
+                        'pincode' => $pincode,
+                        'payment_date' => $payment_date,
+                        'receipt' => $receipt,
+                        'seva_name' => $seva_name,
+                        'insert_id' => $insert_id,
+                        'festival' => $festival,
+                        'paid_from'=>'website'
+                    ]
+        
+                ];
 
-            $data['keyId'] = $keyId = $this->config->item('keyId');
-            $this->seva_page_model->data['seva_name'] = $data['seva_name'] = $seva_name = $slug;
-            $this->seva_page_model->data['full_name'] = $data['full_name'] = $full_name = $this->input->post('full_name');
-            $this->seva_page_model->data['phone_number'] = $data['phone_number'] = $phone_number = $this->input->post('phone_number');
-            $this->seva_page_model->data['email'] = $data['email'] = $email = $this->input->post('email');
-            $this->seva_page_model->data['pan_number'] = $data['pan_number'] = $pan_number = $this->input->post('pan_number');
-            $this->seva_page_model->data['city'] = $data['city'] = $city = $this->input->post('city');
-            $this->seva_page_model->data['pincode'] = $data['pincode'] = $pincode = $this->input->post('pincode');
-            $this->seva_page_model->data['amount'] = $data['amount'] = $amount = $this->input->post('amount');
-            $this->seva_page_model->data['donation_type'] = $data['donation_type'] = $donation_type = $this->input->post('donation_type');
-            $this->seva_page_model->data['payment_date'] = $data['payment_date'] = $payment_date = date('Y-m-d h:i:s');
-            $this->seva_page_model->data['seva_date'] = $data['seva_date'] = $seva_date = $this->input->post('seva_date');
-            $this->seva_page_model->data['status'] = 'Attempt';
-            $str_result = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-            $generated_key = substr(str_shuffle($str_result), 0, 4);
-            $this->seva_page_model->data['receipt'] = $receipt = $generated_key . '_' . rand('00000000', '9999999999');
-            $insert_id = $this->seva_page_model->insert($table_name);
+                $api = new Api($this->config->item('keyId'), $this->config->item('keySecret'));
+                $razorpayOrder = $api->order->create($order_data);
 
-            // print_r($insert_id);exit;
-            $order_data = [
-                'receipt'         => $receipt,
-                'amount'          => $amount * 100, // 39900 rupees in paise
-                'currency'        => 'INR',
-                'payment'=> [
-                    "capture"=> "automatic",
-                    'capture_options' => array('automatic_expiry_period' => 12,'manual_expiry_period' => 7200,'refund_speed' => 'normal')
-                ],
-                'notes'           => [
-                    'name'  => $full_name,
-                    'phone_number' => $phone_number,
-                    'email' => $email,
-                    'pan_number' => $pan_number,
-                    'city' => $city,
-                    'pincode' => $pincode,
-                    'payment_date' => $payment_date,
-                    'receipt' => $receipt,
-                    'seva_name' => $seva_name,
-                    'insert_id' => $insert_id
-                ]
+                $data['key'] = $this->config->item('keyId');
+                $data['image'] = SETTINGS_UPLOAD_PATH.$data['settings']->LOGO_IMAGE;
+                $this->festivals_model->data['order_id'] = $data['order_id'] = $order_id = $razorpayOrder['id'];
+                $this->festivals_model->data['razorpay_order_id'] = $data['razorpay_order_id'] = $razorpay_order_id = $razorpayOrder['id'];
+                $this->festivals_model->data['entity'] = $data['entity'] = $entity = $razorpayOrder['entity'];
+                $this->festivals_model->data['status'] = $data['status'] = $status = $razorpayOrder['status'];
+                $this->festivals_model->data['created_at'] = $data['created_at'] = $created_at = $razorpayOrder['created_at'];
+                $this->festivals_model->primary_key = array('id' => $insert_id);
+                $this->festivals_model->update($table_name);
+               $data['callback_url'] = "seva_page/donation_success/$insert_id";
+                $this->load->view($template_path, $data);
 
-            ];
-            $api = new Api($this->config->item('keyId'), $this->config->item('keySecret'));
-            $razorpayOrder = $api->order->create($order_data);
-            // print_r($razorpayOrder['id']);exit;
+            }else{
+                $template_path = $this->programpagewisecontent($slug);
+                $data = $this->data;
+                $data['page_heading'] = $data['page_items']->title;
+                $data['breadcrumb'] = '<span><a href="">Home</a> - </span><span><i class="fa fa-angle-right"></i></span><span class="active">'.$data['page_items']->title.'</span>' ;   
+                $data['scripts'] = array('assets/javascripts/custom_page.js');
+                $this->load->view($template_path, $data);
+            }
+            
 
-            $this->seva_page_model->data['order_id'] = $data['order_id'] = $order_id = $razorpayOrder['id'];
-            $this->seva_page_model->data['razorpay_order_id'] = $data['razorpay_order_id'] = $razorpay_order_id = $razorpayOrder['id'];
-            $this->seva_page_model->data['entity'] = $data['entity'] = $entity = $razorpayOrder['entity'];
-            $this->seva_page_model->data['status'] = $data['status'] = $status = $razorpayOrder['status'];
-            $this->seva_page_model->data['created_at'] = $data['created_at'] = $created_at = $razorpayOrder['created_at'];
+        
 
-            $this->seva_page_model->primary_key = array('id' => $insert_id);
-            $this->seva_page_model->update($table_name);
-     
-            // $data['view_path'] = "custom/".$slug; 
-            $data['insert_id'] = $insert_id;
-            $this->load->view($template_path, $data);
         }else{
 
 
@@ -156,62 +182,6 @@ class Charitable_Programs extends MY_Controller
         $this->load->view('templates/custom_page', $data);
     }
 
-
-    public function charitable($slug){
-        $template_path = $this->pagewisecontent($slug);
-        $data = $this->data;
-        $data['slug'] = $slug;
-        $data['table_name'] = $table_name = $this->input->post('table_name');
-
-        $data['keyId'] = $keyId = $this->config->item('keyId');
-        $this->seva_page_model->data['seva_name'] = $data['seva_name'] = $seva_name = $this->input->post('table_name');
-        $this->seva_page_model->data['full_name'] = $data['full_name'] = $full_name = $this->input->post('full_name');
-        $this->seva_page_model->data['phone_number'] = $data['phone_number'] = $phone_number = $this->input->post('phone_number');
-        $this->seva_page_model->data['email'] = $data['email'] = $email = $this->input->post('email');
-        $this->seva_page_model->data['pan_number'] = $data['pan_number'] = $pan_number = $this->input->post('pan_number');
-        $this->seva_page_model->data['city'] = $data['city'] = $city = $this->input->post('city');
-        $this->seva_page_model->data['amount'] = $data['amount'] = $amount = $this->input->post('amount');
-        $this->seva_page_model->data['payment_date'] = $data['payment_date'] = $payment_date = date('Y-m-d h:i:s');
-        $str_result = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        $generated_key = substr(str_shuffle($str_result), 0, 4);
-        $this->seva_page_model->data['receipt'] = $receipt = $generated_key . '_' . rand('00000000', '9999999999');
-        $insert_id = $this->seva_page_model->insert($table_name);
-
-        // print_r($insert_id);exit;
-        $order_data = [
-            'receipt'         => $receipt,
-            'amount'          => $amount * 100, // 39900 rupees in paise
-            'currency'        => 'INR',
-            'notes'           => [
-                'name'  => $full_name,
-                'phone_number' => $phone_number,
-                'email' => $email,
-                'pan_number' => $pan_number,
-                'city' => $city,
-                'payment_date' => $payment_date,
-                'receipt' => $receipt,
-                'seva_name' => $seva_name,
-                'insert_id' => $insert_id
-            ]
-
-        ];
-        $api = new Api($this->config->item('keyId'), $this->config->item('keySecret'));
-        $razorpayOrder = $api->order->create($order_data);
-        // print_r($razorpayOrder['created_at']);exit;
-
-        $this->seva_page_model->data['razorpay_order_id'] = $data['razorpay_order_id'] = $razorpay_order_id = $razorpayOrder['id'];
-        $this->seva_page_model->data['entity'] = $data['entity'] = $entity = $razorpayOrder['entity'];
-        $this->seva_page_model->data['status'] = $data['status'] = $status = $razorpayOrder['status'];
-        $this->seva_page_model->data['created_at'] = $data['created_at'] = $created_at = $razorpayOrder['created_at'];
-
-        $this->seva_page_model->primary_key = array('id' => $insert_id);
-        $this->seva_page_model->update($slug);
-
-
-        $data['insert_id'] = $insert_id;
-        $this->load->view($template_path, $data);
-    }
-   
 
     
     public function save_payment($insert_id, $table_name)

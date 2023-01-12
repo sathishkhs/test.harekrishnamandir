@@ -52,7 +52,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 		</header>
 		 <!-- Start main-content -->
 		 <div class="main-content-area">
-		 <?php $this->load->view('templates/includes/charitable_banner'); ?>
+		 <?php // $this->load->view('templates/includes/charitable_banner'); ?>
 		 <?php $this->load->view($view_path); ?>
 		</div>
 		<?php $this->load->view('templates/includes/footer'); ?>
