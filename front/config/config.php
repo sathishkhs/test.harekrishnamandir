@@ -23,8 +23,8 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 | a PHP script and you can easily do that on your own.
 |
 */
-// $config['base_url'] = 'http://localhost/harekrishnamandir/';
-$config['base_url'] = 'https://harekrishnamandir.org/';
+// $config['base_url'] = 'http://localhost/test.harekrishnamandir/';
+$config['base_url'] = 'https://test.harekrishnamandir.org/';
 
 date_default_timezone_set("Asia/kolkata");
 /*
