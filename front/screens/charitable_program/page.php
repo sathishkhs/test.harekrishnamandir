@@ -858,37 +858,44 @@ offering Seva this Makar Sankranti.</p>
         "order_id": "<?php echo $order_id; ?>",
         "callback_url": "<?php echo $callback_url; ?>",
         "notes": <?php echo json_encode($order_data['notes']) ?>,
+        "prefill": {
+            "name": "<?php echo $order_data['notes']['name']; ?>",
+            "email": "<?php echo $order_data['notes']['email']; ?>",
+            "contact": "<?php echo $order_data['notes']['phone_number']; ?>",
+            "pan_number": "<?php echo $order_data['notes']['pan_number']; ?>",
+            "address": "<?php echo $order_data['notes']['address']; ?>",
+        },
         "theme": {
             "color": "#F37254",
         },
         "modal": {
             "escape" : false, 
             ondismiss: function(){ 
-            $('#failed-form').html('<form id="failed_form_submit" action="seva_page/donation_failed/'+data.responseJSON.insert_id+'" method="post" style="display:none"><input type="hidden" name="status" value="Form Closed"><input type="hidden" name="error_code" value=""><input type="hidden" name="error_description" value=""><input type="hidden" name="error_source" value=""><input type="hidden" name="error_reason" value=""><input type="hidden" name="razorpay_order_id" value=""></form>');
+            $('#failed-form').html('<form id="failed_form_submit" action="seva_page/donation_failed/<?php echo $order_data['notes']['insert_id']; ?>" method="post" style="display:none"><input type="hidden" name="status" value="Form Closed"><input type="hidden" name="error_code" value=""><input type="hidden" name="error_description" value=""><input type="hidden" name="error_source" value=""><input type="hidden" name="error_reason" value=""><input type="hidden" name="razorpay_order_id" value=""></form>');
             $('#failed_form_submit').submit();
             } 
         },
         config: {
-    display: {
-      blocks: {
-        banks: {
-          name: 'All payment methods',
-          instruments: [
-            {
-              method: 'upi'
+        display: {
+        blocks: {
+            banks: {
+            name: 'All payment methods',
+            instruments: [
+                {
+                method: 'upi'
+                },
+                {
+                method: 'card'
+                },
+                {
+                    method: 'wallet'
+                },
+                {
+                    method: 'netbanking'
+                }
+            ],
             },
-            {
-              method: 'card'
-            },
-            {
-                method: 'wallet'
-            },
-            {
-                method: 'netbanking'
-            }
-          ],
         },
-      },
       sequence: ['block.banks'],
       preferences: {
         show_default_blocks: false,
