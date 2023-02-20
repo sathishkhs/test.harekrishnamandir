@@ -378,7 +378,7 @@ section.campaign-detail.blog-detail .blog-figure img{
     border-radius: 0px 0px 0px 0px;
     padding: 15px 30px 15px 30px;
 }
-input.form-control, textarea.form-control {
+input.form-control, textarea.form-control,select.form-control {
     border-radius: 0px;
     border: none;
     font-size: 14px;
@@ -389,7 +389,16 @@ input.form-control, textarea.form-control {
 	z-index: 100;
     display: none;
   }
-  
+  select {
+  /*webkit browsers */
+  -webkit-appearance: menulist!important;
+  /*Firefox */
+  -moz-appearance: menulist!important;
+  /* modern browsers */
+  appearance: menulist!important;
+  border-radius: 0;
+
+}
   .button-donate input[type="radio"]:checked + label {
     background: #f7b135;
     border-radius: 0px;
@@ -402,7 +411,7 @@ input.form-control, textarea.form-control {
 	z-index: 90;
 	line-height: 1.8em;
   }
-  input.form-control {
+  input.form-control, select.form-control {
     border: 1px solid #afaaaf88;
 }
 
@@ -533,6 +542,17 @@ offering Seva this Makar Sankranti.</p>
                       
                   <div class="row">
                      
+                      <div class="form-group col-md-12 d-flex flex-wrap  p-0 border-0 mb-2 bg-light">
+                          <div class="form-check d-flex mt-2">
+                              <input class="form-check-input ml-10" type="radio" id="Onetime" name="duration" value="DONATE-NOW" checked>
+                              <label class="form-check-label pl-10" for="Onetime">One Time</label> &nbsp;
+                              <input class="form-check-input ml-10" type="radio" id="Monthly" name="duration" value="DONATE-MONTHLY" >
+                              <label class="form-check-label pl-10" for="Monthly"> Donate Monthly</label> &nbsp;
+                              
+                          </div>
+
+
+                      </div>
                       <div class="form-group col-md-12 d-flex flex-wrap  p-0 border-0 mb-2">
                           <div class="form-check d-flex mt-2">
                               <input class="form-check-input ml-10" type="radio" checked id="one" name="radioamount" value="<?php echo $page_items->amount_1;?>" >
@@ -602,6 +622,31 @@ offering Seva this Makar Sankranti.</p>
                     </div>
                   </div>
 
+                  <div class="row mt-2 d-none" id="monthly-show">
+                       <div class="col-sm-12 form-group">
+                           <label for="donation_period">Donation Period</label>
+                            <select name="donation_period" class="form-control mb-2" id="donation_period" disabled>
+                               <option >Select Donation Period</option>
+                               <option value="3">3 Months</option>
+                               <option value="6">6 Months</option>
+                               <option value="9">9 Months</option>
+                               <option value="12">12 Months</option>
+                               <option value="24">24 Months</option>
+                               <option value="48">48 Months</option>
+                            </select>
+                        </div>
+                        <!-- <input name="payment_method" type="hidden" value="card"> -->
+                        <div class="col-sm-12 form-group">
+                            <label for="payment_method">Payment Method</label>
+                            <select name="payment_method" class="form-control mb-2" id="payment_method" disabled>
+                                
+                                <option value="card">Card</option>
+                                <option value="upi">UPI</option>
+                                <option value="netbanking">Net Banking</option>
+                            </select>
+                        </div>
+                    </div>
+
                   <div class="row">
                       <div class="col-sm-12">
                           <label for="80G-0" class="thm-color1"> 
@@ -617,8 +662,8 @@ offering Seva this Makar Sankranti.</p>
                       </div>
                   </div>
                   <div class="row address_div">
-                    <input name="address" type="hidden" value="">
-                    <input name="city" type="hidden" value="">
+                    <input name="address" type="hidden" value="-">
+                    <input name="city" type="hidden" value="-">
                     <input name="pincode" type="hidden" value="0">
 
                   </div>
@@ -694,6 +739,30 @@ offering Seva this Makar Sankranti.</p>
         }
     })
 
+    $('#Onetime').change(function() {
+            $('.donate-radio').removeAttr('checked');
+            $('#Monthly').attr('checked',false);
+            $(this).attr('checked',true)
+            $('#duration').val('Onetime')
+            $('#monthly-show').addClass('d-none')
+            $('#payment_method').attr('disabled',true)
+            $('#donation_period').attr('disabled',true)
+            
+          
+        })
+        $('#Monthly').on('change', function() {
+            
+            $('.donate-radio').removeAttr('checked');
+            $('#Onetime').attr('checked',false)
+            $(this).attr('checked',true);
+            $('#duration').val('Monthly')
+            $('#monthly-show').removeClass('d-none')
+            $('#payment_method').removeAttr('disabled')
+            $('#donation_period').removeAttr('disabled')
+           
+           
+        })
+
     var input = document.querySelector("#phone_number");
     window.intlTelInput(input,({
       // options here
@@ -718,15 +787,14 @@ offering Seva this Makar Sankranti.</p>
        });
     });
 
-    $('.form-check-input').click(function(){
+    $('input[name=radioamount]').click(function(){
        $('#amount').val($(this).val());
        $('#custom-text').html('Selected Amount*');
     })
 
 
     $('#other').on('click', function() {
-        // var amount = $('#other').val()
-        // $('#one, #two, #three, #five, #seven, #thousand, #fifteen, #twenty,#other').removeAttr('checked');
+        
         $('#custom-text').html('Enter Choice Amount*');
         $('#other').prop('checked','checked');
         $('#amount').focus();
@@ -829,6 +897,7 @@ offering Seva this Makar Sankranti.</p>
                 // Make sure the form is submitted to the destination defined
                 // in the "action" attribute of the form when valid
                 submitHandler: function(form) {
+                    
                     form.submit();
                 }
             });
@@ -840,11 +909,14 @@ offering Seva this Makar Sankranti.</p>
 <button id="rzp-button1" class="d-none"></button>
 <div id="failed-form"></div>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-
+<?php print_R(!empty($order_data)); ?>
 
 <script>
-   <?php if(!empty($order_data) && !empty($key)){   ?>
-       console.log(<?php echo $data; ?>)
+   <?php 
+   if(!empty($order_data)){  
+      
+   if($order_data['duration'] == 'DONATE-NOW'){ ?> 
+    //    console.log(<?php echo $data; ?>)
     var options = {
         "key": "<?php echo $key ?>",
         "name": "<?php echo $this->config->item('company_name') ?>",
@@ -875,35 +947,50 @@ offering Seva this Makar Sankranti.</p>
             $('#failed_form_submit').submit();
             } 
         },
-        config: {
-        display: {
-        blocks: {
-            banks: {
-            name: 'All payment methods',
-            instruments: [
-                {
-                method: 'upi'
-                },
-                {
-                method: 'card'
-                },
-                {
-                    method: 'wallet'
-                },
-                {
-                    method: 'netbanking'
-                }
-            ],
-            },
+    
+};                         
+   
+
+    <?php 
+    }elseif($order_data['duration'] == 'DONATE-MONTHLY'){ 
+      
+        ?>
+        var options = {
+            "key": "<?php echo $order_data['key'] ?>",
+        "name": "<?php echo $order_data['name'] ?>",
+        "description": "<?php echo $order_data['description'] ?>",
+        "image": "<?php echo $order_data['image']; ?>",
+        "amount": "<?php echo $order_data['amount']*100; ?>",
+        "currency": "<?php echo $order_data['currency']; ?>",
+        "email": "<?php echo $order_data['mail']; ?>",
+        "contact": "<?php echo $order_data['contact']; ?>",
+        "method": "<?php echo $order_data['payment_method']; ?>",
+        "order_id": "<?php echo $order_data['order_id']; ?>",
+        "customer_id": "<?php echo $order_data['customer_id']; ?>",
+        "recurring": "1",
+        "callback_url": "<?php echo $order_data['call_back_url']; ?>",
+        "notes": <?php echo json_encode($order_data['notes']) ?>,
+        "prefill": {
+            "name": "<?php echo $order_data['notes']['name']; ?>",
+            "email": "<?php echo $order_data['notes']['email']; ?>",
+            "contact": "<?php echo $order_data['notes']['phone_number']; ?>",
+            "pan_number": "<?php echo $order_data['notes']['pan_number']; ?>",
+            "address": "<?php echo $order_data['notes']['address']; ?>",
         },
-      sequence: ['block.banks'],
-      preferences: {
-        show_default_blocks: false,
-      },
-    },
-  },
+        "theme": {
+            "color": "#F37254",
+        },
+        "modal": {
+            "escape" : false, 
+            ondismiss: function(){ 
+                $('#failed-form').html('<form id="failed_form_submit" action="seva_page/donation_failed/<?php echo $order_data['insert_id']; ?>" method="post" style="display:none"><input type="hidden" name="status" value="Form Closed"><input type="hidden" name="error_code" value=""><input type="hidden" name="error_description" value=""><input type="hidden" name="error_source" value=""><input type="hidden" name="error_reason" value=""><input type="hidden" name="razorpay_order_id" value=""></form>');
+            $('#failed_form_submit').submit();
+            } 
+        },
                                
     };
+
+        <?php } ?>
 
             
 

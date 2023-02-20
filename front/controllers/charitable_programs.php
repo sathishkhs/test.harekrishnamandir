@@ -24,8 +24,12 @@ class Charitable_Programs extends MY_Controller
 
 
     public function index($slug) {
-       
+      
         if (!empty($this->input->post())) {
+            $keyId = $this->config->item('keyId'); 
+            $keySecret = $this->config->item('keySecret');
+
+
             $this->form_validation->set_rules('full_name', 'Full Name', 'required');
             $this->form_validation->set_rules('email', 'Email', 'required|valid_email|trim');
             $this->form_validation->set_rules('phone_number', 'Phone number', 'required|min_length[10]|max_length[10]|numeric');
@@ -37,6 +41,8 @@ class Charitable_Programs extends MY_Controller
                 $this->form_validation->set_rules('address', 'Address', 'required');
                 $this->form_validation->set_rules('pincode', 'Pincode', 'required|trim|numeric');
             }
+            
+
             
             if ($this->form_validation->run() == TRUE){
                 $template_path = $this->programpagewisecontent($slug);
@@ -62,45 +68,145 @@ class Charitable_Programs extends MY_Controller
                 $generated_key = substr(str_shuffle($str_result), 0, 4);
                 $this->festivals_model->data['receipt'] = $receipt = $generated_key . '_' . rand('00000000', '9999999999');
                 $data['insert_id'] = $insert_id = $this->festivals_model->insert($table_name);
-                $data['order_data'] = $order_data = [
-                    'receipt'         => $receipt,
-                    'amount'          => $amount * 100, // 39900 rupees in paise
-                    'currency'        => $currency,
-                    'payment'=> [
-                        "capture"=> "automatic",
-                        'capture_options' => array('automatic_expiry_period' => 12,'manual_expiry_period' => 7200,'refund_speed' => 'normal')
-                    ],
-                    'notes'           => [
-                        'name'  => $full_name,
-                        'phone_number' => $phone_number,
-                        'email' => $email,
-                        'pan_number' => $pan_number,
-                        'address' => $address,
-                        'pincode' => $pincode,
-                        'payment_date' => $payment_date,
-                        'receipt' => $receipt,
-                        'seva_name' => $seva_name,
-                        'insert_id' => $insert_id,
-                        'festival' => $festival,
-                        'paid_from'=>'website'
-                    ]
-        
+
+
+                $duration = $this->input->post('duration');
+
+                if ($duration == 'DONATE-NOW') {
+                        $data['order_data'] = $order_data = [
+                            'receipt'         => $receipt,
+                            'amount'          => $amount * 100, // 39900 rupees in paise
+                            'currency'        => $currency,
+                            'payment'=> [
+                                "capture"=> "automatic",
+                                'capture_options' => array('automatic_expiry_period' => 12,'manual_expiry_period' => 7200,'refund_speed' => 'normal')
+                            ],
+                            'notes'           => [
+                                'name'  => $full_name,
+                                'phone_number' => $phone_number,
+                                'email' => $email,
+                                'pan_number' => $pan_number,
+                                'address' => $address,
+                                'pincode' => $pincode,
+                                'payment_date' => $payment_date,
+                                'receipt' => $receipt,
+                                'seva_name' => $seva_name,
+                                'insert_id' => $insert_id,
+                                'festival' => $festival,
+                                'paid_from'=>'website'
+                            ],
+                            'duration' =>'DONATE-NOW'
+                
+                        ];
+
+                        $api = new Api($this->config->item('keyId'), $this->config->item('keySecret'));
+                        $razorpayOrder = $api->order->create($order_data);
+
+                        $data['key'] = $this->config->item('keyId');
+                        $data['image'] = SETTINGS_UPLOAD_PATH.$data['settings']->LOGO_IMAGE;
+                        $this->festivals_model->data['order_id'] = $data['order_id'] = $order_id = $razorpayOrder['id'];
+                        $this->festivals_model->data['razorpay_order_id'] = $data['razorpay_order_id'] = $razorpay_order_id = $razorpayOrder['id'];
+                        $this->festivals_model->data['entity'] = $data['entity'] = $entity = $razorpayOrder['entity'];
+                        $this->festivals_model->data['status'] = $data['status'] = $status = $razorpayOrder['status'];
+                        $this->festivals_model->data['created_at'] = $data['created_at'] = $created_at = $razorpayOrder['created_at'];
+                        $this->festivals_model->primary_key = array('id' => $insert_id);
+                        $this->festivals_model->update($table_name);
+                        $data['callback_url'] = "seva_page/donation_success/$insert_id";
+
+                        $this->load->view($template_path, $data);
+
+                } elseif ($duration == 'DONATE-MONTHLY') {
+              
+                    $api = new Api($keyId, $keySecret);
+
+
+                $customer =   $api->customer->create(array('name' => $full_name, 'email' => $email, 'contact' => $phone_number, 'fail_existing' => 0, 'notes' => array('pan' => $pan_number, 'address' => $address, 'amount' => $amount, 'seva_name' => $seva_name, 'payment_date' => $payment_date)));
+                // Api Customer id generated when user details sent 
+                $data['api_customer_id'] = $api_customer_id =  $customer->id;
+                $this->payment_model->primary_key = array('id' => $customer->id);
+                $get_customer = $this->payment_model->row_data('rzp_customers');
+                
+                if (!empty($get_customer) && $get_customer->id == $customer->id) {
+                    $customer_id = $get_customer->customer_id;
+                } else {
+                    $this->payment_model->data = array('id' => $customer->id, 'entity' => $customer->entity, 'full_name' => $customer->name, 'email' => $customer->email, 'contact' => $customer->contact, 'pan' => $customer->notes->pan, 'address' => $address, 'amount' => $amount, 'programme' => $seva_name, 'payment_date' => $payment_date, 'created_at' => $customer->created_at);
+                    $customer_id =  $this->payment_model->insert('rzp_customers');
+                }
+                $this->payment_model->data = [];
+                $this->payment_model->data['payment_method'] =  $payment_method = $this->input->post('payment_method');
+                $this->payment_model->data['donation_period'] = $donation_period = $this->input->post('donation_period');
+                
+                $data['call_back_url'] = $call_back_url = base_url("seva_page/dontaion_success/$insert_id");
+                
+                $data['customer_id'] = $this->payment_model->data['customer_id'] = $customer_id;
+                $this->payment_model->primary_key = array('id' => $insert_id);
+                $this->payment_model->update($table_name);
+                
+                if($payment_method == 'netbanking'){
+                    $razorpayOrder =  $api->order->create(array('amount' => 0,'currency' => 'INR','payment_capture' => true,'method' => 'emandate','customer_id' => $customer->id,'receipt' => $receipt,'token' => array('auth_type' => 'netbanking','max_amount' => $amount * 100,'expire_at' => strtotime(" +".$donation_period." months"),'frequency' => 'monthly'),'notes' => array(
+                        "name"  =>  $full_name,
+                        "email"             => $email,
+                        "contact"           => $phone_number,
+                        "pan"               => $pan_number,
+                        "dob"               => $dob,
+                        "citizen"           => $citizen,
+                       "address"           => $address
+                   )));
+                    
+                   }else{
+                   $razorpayOrder =   $api->order->create(array('amount' => $amount * 100, 'currency' => 'INR', 'method' => $payment_method, 'customer_id' => $customer->id, 'token' => array('max_amount' => $amount * 100, 'expire_at' => strtotime(" +".$donation_period." months"), 'frequency' => 'monthly'), 'receipt' => $receipt, 'notes'           => array(
+                       "name"  =>  $full_name,
+                       "email"             => $email,
+                       "contact"           => $phone_number,
+                       "pan"               => $pan_number,
+                       "seva_name"               => $seva_name,
+                       "festival"               => $festival,
+                       "citizen"           => 'INDIAN',
+                       "address"           => $address
+                    )));
+                }
+                // print_R($razorpayOrder);
+                $this->payment_model->data['razorpay_order_id'] = $data['razorpay_order_id'] = $razorpayOrderId = $razorpayOrder['id'];
+                $this->payment_model->data['amount_paid'] = $razorpayOrder->amount_paid;
+                $this->payment_model->data['amount_due'] = $razorpayOrder->amount_due;
+
+                $this->payment_model->primary_key = array('id' => $insert_id);
+                $this->payment_model->update($table_name);
+              
+                $data['order_data'] = [
+                    "key"               => $keyId,
+                    "amount"            => $amount,
+                    "name"              => $this->config->item('company_name'),
+                    "description"       => $this->config->item('description'),
+                    "image"             => SETTINGS_UPLOAD_PATH . $this->data['settings']->LOGO_IMAGE,
+                    "currency"          => $currency,
+                    "full_name"              => $full_name,
+                    "email"             => $email,
+                    "contact"           => $phone_number,
+                    "pan_number"               => $pan_number,
+                   
+                    "citizen"           => 'INDIAN',
+                    "address"           => $address,
+                    "merchant_order_id" => $receipt,
+                    "receipt" => $receipt,
+                    "order_id"          => $razorpayOrderId,
+                    "insert_id"         => $insert_id,
+                    "campaign"         => $festival,
+                    "seva_name"         => $seva_name,
+                    "table_name"              => $table_name,
+                    "payment_method" => $payment_method,
+                    "customer_id" => $api_customer_id,
+                    "call_back_url"  => $call_back_url,
+                    "interval" => $donation_period,
+                    "duration" => $this->input->post('duration'),
+                    "insert_id" => $insert_id
+
                 ];
-
-                $api = new Api($this->config->item('keyId'), $this->config->item('keySecret'));
-                $razorpayOrder = $api->order->create($order_data);
-
-                $data['key'] = $this->config->item('keyId');
-                $data['image'] = SETTINGS_UPLOAD_PATH.$data['settings']->LOGO_IMAGE;
-                $this->festivals_model->data['order_id'] = $data['order_id'] = $order_id = $razorpayOrder['id'];
-                $this->festivals_model->data['razorpay_order_id'] = $data['razorpay_order_id'] = $razorpay_order_id = $razorpayOrder['id'];
-                $this->festivals_model->data['entity'] = $data['entity'] = $entity = $razorpayOrder['entity'];
-                $this->festivals_model->data['status'] = $data['status'] = $status = $razorpayOrder['status'];
-                $this->festivals_model->data['created_at'] = $data['created_at'] = $created_at = $razorpayOrder['created_at'];
-                $this->festivals_model->primary_key = array('id' => $insert_id);
-                $this->festivals_model->update($table_name);
-               $data['callback_url'] = "seva_page/donation_success/$insert_id";
+                // print_r($data); 
                 $this->load->view($template_path, $data);
+
+
+                }
 
             }else{
                 $template_path = $this->programpagewisecontent($slug);
