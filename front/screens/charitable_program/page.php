@@ -763,29 +763,8 @@ offering Seva this Makar Sankranti.</p>
            
         })
 
-    var input = document.querySelector("#phone_number");
-    window.intlTelInput(input,({
-      // options here
-      initialCountry: "in",
-      autoPlaceholder: "polite",
-      separateDialCode: true,
-    }));
-      var phone = $('#phone_number').val();
-      if(phone == ''){
-       var phone_number = '';
-      }else{
-         var phone_number = phone
-      }
-    $(document).ready(function() {
-        // $('#phone_number').val("+91");
-        $('.iti__flag-container').click(function() { 
-          var countryCode = $('.iti__selected-flag').attr('title');
-          var countryCode = countryCode.replace(/[^0-9]/g,'')
-          // $('#phone_number').val("");
-          // $('#phone_number').val("+"+countryCode+" "+ phone_number);
-          $('#country_code').val("+"+countryCode);
-       });
-    });
+   
+ 
 
     $('input[name=radioamount]').click(function(){
        $('#amount').val($(this).val());
@@ -1002,4 +981,29 @@ offering Seva this Makar Sankranti.</p>
     rzp1.open();
    
     <?php } ?>
+
+
+     var input = document.querySelector("#phone_number");
+    window.intlTelInput(input,({
+      // options here
+      initialCountry: "in",
+      autoPlaceholder: "polite",
+      separateDialCode: true,
+    }));
+      var phone = $('#phone_number').val();
+      if(phone == ''){
+       var phone_number = '';
+      }else{
+         var phone_number = phone
+      }
+    $(document).ready(function() {
+        // $('#phone_number').val("+91");
+        $('.iti__flag-container').click(function() { 
+          var countryCode = $('.iti__selected-flag').attr('title');
+          var countryCode = countryCode.replace(/[^0-9]/g,'')
+          // $('#phone_number').val("");
+          // $('#phone_number').val("+"+countryCode+" "+ phone_number);
+          $('#country_code').val("+"+countryCode);
+       });
+    });
 </script>
