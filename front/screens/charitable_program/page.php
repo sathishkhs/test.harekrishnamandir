@@ -399,11 +399,16 @@ input.form-control, textarea.form-control,select.form-control {
   border-radius: 0;
 
 }
+.button-donate input[type="radio"] + label {
+    background: #f3f6f8;
+    border-color: #f3f6f8;
+    color: #212121;
+}
   .button-donate input[type="radio"]:checked + label {
-    background: #f7b135;
+    background: #1982c5;
     border-radius: 0px;
     color: white;
-    border-color: #f7b135;
+    border-color: #1982c5;
   }
   
   .button-donate label {
@@ -436,6 +441,10 @@ input.form-control, textarea.form-control,select.form-control {
   .iti__selected-flag{
       height: 60%;
   }
+.button-donate .btn{
+    border-radius: 0px;
+}
+ 
 </style>
 
 <div id="preloader" class="d-none">
@@ -499,7 +508,7 @@ offering Seva this Makar Sankranti.</p>
     </section>
 
                      
-<section class="campaign-detail " id="section-1">
+<section class="campaign-detail " id="section-1" >
     <div class="container">
         <div class="row">
             <div class="col-12 col-lg-7">
@@ -509,24 +518,49 @@ offering Seva this Makar Sankranti.</p>
                
 
             </div>
-            <div class="col-12 col-lg-5">
-            <div class="card-box pt-0 px-0 pb-0" style="box-shadow: none">
+            <div class="col-12 col-lg-5" >
+            <div class="card-box pt-0 px-0 pb-0" style="box-shadow: none;">
                       
                       <h4> You can make a big difference to their lives!</h4>
               </div>
-            <div class="container bg-light p-2">
-      <div class="modal-body">
+            <div class="container  p-2" style="background:#f7b135; box-shadow: inset 0 0 30px rgba(255,255,255,0.6)">
+                <form id="popup_paypal_donate_form_onetime_recurring" action="<?php echo $page_items->page_slug; ?>"  method="POST" enctype="multipart/form-data">
+                <div class="form-group d-flex  my-2" id="button-donate-month">
+                    <div class="button-donate">
+                        <input type="radio"  id="Onetime" name="duration" value="DONATE-NOW" checked autocomplete="off"/>
+                        <label class="btn btn-default onetime-label" for="Onetime"  style=""> One Time Gift</label>
+                    </div>
+                    <div class="button-donate ">
+                        <input type="radio" id="Monthly" name="duration" value="DONATE-MONTHLY" autocomplete="off"/>
+                        <label class="btn btn-default monthly-label" for="Monthly" style="">Monthly Gift</label>
+                    </div>
+                </div>
+      
+                <div class="modal-body m-1 bg-light" style=" box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2)">
         <section>
           <div class="section-content">
             <div class="container pt-1 ">
             <div class="row">
               <div class="col-xs-12 col-sm-12 col-md-12">
-              
+
+
+             
+
+              <!-- <div class="form-group col-md-12 d-flex flex-wrap  p-0 border-0 mb-2">
+                          <div class="form-check d-flex mt-2">
+                              <input class="form-check-input btn btn-light ml-10" type="radio" id="Onetime" name="duration" value="DONATE-NOW" checked>
+                              <label class="form-check-label pl-10" for="Onetime">One Time</label> &nbsp;
+                              <input class="form-check-input ml-10" type="radio" id="Monthly" name="duration" value="DONATE-MONTHLY" >
+                              <label class="form-check-label pl-10" for="Monthly"> Donate Monthly</label> &nbsp;
+                              
+                          </div>
+
+
+                      </div> -->
                 <h6 class="mt-0 line-bottom mb-3"><?php echo $page_items->form_heading; ?></h6>
                 <p>Avail tax exemption under Section 80G</p>
                 <?php echo validation_errors(); ?>
                 <!-- ===== START: Paypal Both Onetime/Recurring Form ===== -->
-                <form id="popup_paypal_donate_form_onetime_recurring" action="<?php echo $page_items->page_slug; ?>"  method="POST" enctype="multipart/form-data">
                     <?php if($this->config->item('payment_mode') == 'test'){ ?>
                     <input name="table_name" type="hidden" value="test_payments">
                     <?php } else{ ?>
@@ -542,17 +576,7 @@ offering Seva this Makar Sankranti.</p>
                       
                   <div class="row">
                      
-                      <div class="form-group col-md-12 d-flex flex-wrap  p-0 border-0 mb-2 bg-light">
-                          <div class="form-check d-flex mt-2">
-                              <input class="form-check-input ml-10" type="radio" id="Onetime" name="duration" value="DONATE-NOW" checked>
-                              <label class="form-check-label pl-10" for="Onetime">One Time</label> &nbsp;
-                              <input class="form-check-input ml-10" type="radio" id="Monthly" name="duration" value="DONATE-MONTHLY" >
-                              <label class="form-check-label pl-10" for="Monthly"> Donate Monthly</label> &nbsp;
-                              
-                          </div>
-
-
-                      </div>
+                      
                       <div class="form-group col-md-12 d-flex flex-wrap  p-0 border-0 mb-2">
                           <div class="form-check d-flex mt-2">
                               <input class="form-check-input ml-10" type="radio" checked id="one" name="radioamount" value="<?php echo $page_items->amount_1;?>" >
@@ -677,14 +701,14 @@ offering Seva this Makar Sankranti.</p>
                   <div class="col-sm-8 mx-auto text-center">
                          <!-- <small> Avail tax exemption under Section 80G</small> -->
                       </div>
-                </form>
-
-
-              </div>
+                      
+                      
+                    </div>
+                </div>
             </div>
-            </div>
-          </div>
-      </section></div>
+        </div>
+    </section></div>
+</form>
       </div>
 
             </div>
